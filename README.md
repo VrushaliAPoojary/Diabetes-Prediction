@@ -8,7 +8,7 @@ This project trains supervised machine-learning models to predict whether a pati
 
 ```text
 Diabetes-Prediction/
-├── data/                         # Dataset location; script downloads diabetes.csv here
+├── data/                         # Dataset location plus diet recommendation knowledge base
 ├── models/                       # Saved trained model output
 ├── reports/                      # Text report and confusion-matrix image output
 ├── src/train_diabetes_model.py   # Main training and evaluation script
@@ -79,7 +79,7 @@ The script will download `data/diabetes.csv` automatically if the file is missin
 streamlit run src/patient_app.py
 ```
 
-The Streamlit app opens in your browser and lets you enter patient values in real time. It shows a diabetes risk prediction, an estimated probability score, and a comparison of the entered values against the dataset medians and percentiles.
+The Streamlit app opens in your browser and lets you enter patient values in real time. It shows low, medium, or high diabetes chance, an estimated probability score, dataset comparisons, and an AI-guided diet plan based on pregnancy status, age group, activity level, and vegetarian/non-vegetarian preference.
 
 ### 6. Review generated outputs
 
@@ -97,8 +97,31 @@ reports/confusion_matrix.png
 2. **Data preprocessing**: Replaces impossible zero medical measurements with missing values, imputes medians, and scales features for Logistic Regression.
 3. **Model training**: Trains Logistic Regression, Decision Tree, and Random Forest classifiers.
 4. **Model evaluation**: Calculates accuracy, confusion matrix, precision, recall, F1-score, and support.
-5. **Patient-friendly UI**: Runs a Streamlit app that accepts live patient inputs and displays risk predictions plus dataset comparisons.
-6. **Model saving**: Saves the best-performing pipeline as `models/diabetes_model.joblib`.
+5. **Patient-friendly UI**: Runs a Streamlit app that accepts live patient inputs and displays low, medium, or high risk predictions plus dataset comparisons.
+6. **Diet recommendation feature**: Uses `data/diet_recommendations.csv` as a local knowledge base to suggest vegetarian, non-vegetarian, eggetarian, pregnancy-aware, age-aware, and risk-aware meal ideas.
+7. **Model saving**: Saves the best-performing pipeline as `models/diabetes_model.joblib`.
+
+## AI-guided diet recommendation feature
+
+The web app includes an educational, data-driven diet recommendation engine. It asks for:
+
+- Food preference: vegetarian, non-vegetarian, or eggetarian.
+- Pregnancy status, so pregnant patients receive safer pregnancy-focused reminders.
+- Age, which is converted into a young adult, adult, or senior adult group.
+- Activity level, so lifestyle suggestions can be adjusted.
+- Model probability, which is converted into low, medium, or high diabetes chance.
+
+The diet suggestions come from `data/diet_recommendations.csv`. To improve or customize the diet data yourself:
+
+1. Open `data/diet_recommendations.csv`.
+2. Add a new row with these columns: `category`, `diet_preference`, `age_group`, `pregnancy`, `risk_level`, `activity_level`, and `recommendation`.
+3. Use `Any` in a column when the recommendation should apply to everyone.
+4. Use `Vegetarian`, `Non-vegetarian`, or `Eggetarian` to target a specific food preference.
+5. Use `Yes` or `No` in `pregnancy` for pregnancy-specific advice.
+6. Use `Low`, `Medium`, or `High` in `risk_level` for risk-specific advice.
+7. Save the file and restart the Streamlit app with `streamlit run src/patient_app.py`.
+
+Important: the diet output is educational and should not replace advice from a doctor, registered dietitian, or diabetes educator, especially for pregnancy, medication use, kidney disease, heart disease, allergies, or insulin therapy.
 
 ## Report template
 

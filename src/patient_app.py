@@ -5,7 +5,6 @@ from __future__ import annotations
 from pathlib import Path
 
 import joblib
-import numpy as np
 import pandas as pd
 import streamlit as st
 
@@ -13,7 +12,12 @@ from train_diabetes_model import build_models, load_data, preprocess_features
 
 DATA_PATH = Path("data/diabetes.csv")
 MODEL_PATH = Path("models/diabetes_model.joblib")
+DIET_DATA_PATH = Path("data/diet_recommendations.csv")
 RANDOM_STATE = 42
+LOW_RISK_LIMIT = 0.35
+MEDIUM_RISK_LIMIT = 0.65
+
+DIET_PREFERENCES = ["Vegetarian", "Non-vegetarian", "Eggetarian"]
 
 FEATURE_HELP = {
     "Pregnancies": "Number of pregnancies. Use 0 if this does not apply.",
@@ -90,6 +94,10 @@ def configure_page() -> None:
             color: #047857;
             font-weight: 800;
         }
+        .risk-medium {
+            color: #d97706;
+            font-weight: 800;
+        }
         .risk-high {
             color: #dc2626;
             font-weight: 800;
@@ -112,6 +120,12 @@ def get_dataset() -> pd.DataFrame:
     return load_data(DATA_PATH)
 
 
+@st.cache_data(show_spinner="Loading diet recommendation knowledge base...")
+def get_diet_knowledge() -> pd.DataFrame:
+    """Load the local diet recommendation dataset used by the UI recommendation engine."""
+    return pd.read_csv(DIET_DATA_PATH)
+
+
 @st.cache_resource(show_spinner="Preparing prediction model...")
 def get_model() -> object:
     """Load a saved model or train a Random Forest model when no saved model exists."""
@@ -125,8 +139,8 @@ def get_model() -> object:
     return model
 
 
-def render_sidebar_inputs() -> dict[str, float]:
-    """Render patient input controls in the sidebar."""
+def render_sidebar_inputs() -> tuple[dict[str, float], dict[str, object]]:
+    """Render patient health and diet-personalization inputs in the sidebar."""
     st.sidebar.header("🧾 Patient health inputs")
     st.sidebar.caption("Move the sliders or type values. Prediction updates instantly.")
 
@@ -143,17 +157,102 @@ def render_sidebar_inputs() -> dict[str, float]:
         )
 
     st.sidebar.divider()
+    st.sidebar.header("🥗 Diet personalization")
+    diet_preference = st.sidebar.radio(
+        "Food preference",
+        DIET_PREFERENCES,
+        help="Used only to personalize meal ideas. Vegetarian users receive vegetarian-only suggestions.",
+    )
+    is_pregnant = st.sidebar.checkbox(
+        "Currently pregnant",
+        value=False,
+        help="Pregnancy needs individualized care, so the app adds safer, pregnancy-focused diet reminders.",
+    )
+    activity_level = st.sidebar.selectbox(
+        "Daily activity level",
+        ["Low", "Moderate", "High"],
+        index=1,
+        help="Used to tune general lifestyle suggestions.",
+    )
+
+    st.sidebar.divider()
     st.sidebar.info(
         "This app is for education and early awareness only. Please consult a qualified clinician for medical advice."
     )
-    return patient
+    profile = {
+        "diet_preference": diet_preference,
+        "is_pregnant": is_pregnant,
+        "activity_level": activity_level,
+    }
+    return patient, profile
 
 
-def risk_label(probability: float) -> tuple[str, str]:
-    """Convert prediction probability into a patient-friendly label and CSS class."""
-    if probability >= 0.5:
-        return "Higher diabetes risk", "risk-high"
-    return "Lower diabetes risk", "risk-low"
+def risk_label(probability: float) -> tuple[str, str, str]:
+    """Convert prediction probability into low, medium, or high risk text and CSS class."""
+    if probability < LOW_RISK_LIMIT:
+        return "Low diabetes chance", "risk-low", "Keep your healthy routine consistent."
+    if probability < MEDIUM_RISK_LIMIT:
+        return "Medium diabetes chance", "risk-medium", "Improve food choices and monitor key health numbers."
+    return "High diabetes chance", "risk-high", "Please arrange a medical checkup and review your glucose results."
+
+
+def age_group(age: float) -> str:
+    """Return a simple age group for diet guidance."""
+    if age < 30:
+        return "young adult"
+    if age < 60:
+        return "adult"
+    return "senior adult"
+
+
+def personalized_diet_plan(patient: dict[str, float], profile: dict[str, object], risk_level: str) -> dict[str, list[str]]:
+    """Create an AI-style data-driven diet plan from risk tier, age, pregnancy, and food preference."""
+    preference = str(profile["diet_preference"])
+    pregnant = "Yes" if bool(profile["is_pregnant"]) else "No"
+    activity = str(profile["activity_level"])
+    group = age_group(patient["Age"])
+    risk_key = risk_level.split()[0]
+
+    knowledge = get_diet_knowledge()
+    matches = knowledge[
+        knowledge["diet_preference"].isin(["Any", preference])
+        & knowledge["age_group"].isin(["Any", group])
+        & knowledge["pregnancy"].isin(["Any", pregnant])
+        & knowledge["risk_level"].isin(["Any", risk_key])
+        & knowledge["activity_level"].isin(["Any", activity])
+    ]
+
+    plan: dict[str, list[str]] = {}
+    for category, rows in matches.groupby("category", sort=False):
+        plan[category] = rows["recommendation"].drop_duplicates().tolist()
+    return plan
+
+
+def render_diet_plan(patient: dict[str, float], profile: dict[str, object], risk_level: str) -> None:
+    """Render personalized diet suggestions and doctor-consultation guidance."""
+    st.subheader("🥗 AI-guided personalized diet plan")
+    st.caption(
+        "This is a data-driven educational recommendation engine using a local diet knowledge base, your risk tier, "
+        "age, pregnancy status, activity level, and vegetarian/non-vegetarian preference."
+    )
+    st.write(
+        f"Plan type: **{profile['diet_preference']}** • Age group: **{age_group(patient['Age']).title()}** • "
+        f"Pregnancy: **{'Yes' if profile['is_pregnant'] else 'No'}** • Risk tier: **{risk_level}**"
+    )
+
+    plan = personalized_diet_plan(patient, profile, risk_level)
+    columns = st.columns(2)
+    for index, (section, items) in enumerate(plan.items()):
+        with columns[index % 2]:
+            with st.expander(section, expanded=True):
+                for item in items:
+                    st.markdown(f"- {item}")
+
+    st.warning(
+        "Important: This diet plan is educational and not a medical prescription. Diabetes, pregnancy, kidney disease, "
+        "heart disease, food allergies, medicines, and insulin use can change what is safe for you. Please consult a "
+        "doctor, registered dietitian, or diabetes educator before following any diet or treatment plan."
+    )
 
 
 def comparison_table(data: pd.DataFrame, patient: dict[str, float]) -> pd.DataFrame:
@@ -172,14 +271,14 @@ def comparison_table(data: pd.DataFrame, patient: dict[str, float]) -> pd.DataFr
     return pd.DataFrame(rows)
 
 
-def render_prediction(patient: dict[str, float]) -> None:
-    """Render prediction results, comparison data, and next-step guidance."""
+def render_prediction(patient: dict[str, float], profile: dict[str, object]) -> None:
+    """Render prediction results, comparison data, diet guidance, and next steps."""
     data = get_dataset()
     model = get_model()
     patient_frame = pd.DataFrame([patient])
     probability = float(model.predict_proba(patient_frame)[0][1])
     prediction = int(probability >= 0.5)
-    label, css_class = risk_label(probability)
+    label, css_class, risk_message = risk_label(probability)
 
     st.markdown(
         """
@@ -197,6 +296,7 @@ def render_prediction(patient: dict[str, float]) -> None:
         st.subheader("Prediction result")
         st.markdown(f'<h2 class="{css_class}">{label}</h2>', unsafe_allow_html=True)
         st.write("Model output:", "Diabetes likely" if prediction else "Diabetes not likely")
+        st.caption(risk_message)
         st.markdown("</div>", unsafe_allow_html=True)
 
     with gauge_col:
@@ -216,6 +316,9 @@ def render_prediction(patient: dict[str, float]) -> None:
         st.markdown("</div>", unsafe_allow_html=True)
 
     st.divider()
+    render_diet_plan(patient, profile, label)
+
+    st.divider()
     st.subheader("📊 Your values compared with the reference dataset")
     st.dataframe(comparison_table(data, patient), use_container_width=True, hide_index=True)
 
@@ -228,4 +331,5 @@ def render_prediction(patient: dict[str, float]) -> None:
 
 
 configure_page()
-render_prediction(render_sidebar_inputs())
+patient_inputs, patient_profile = render_sidebar_inputs()
+render_prediction(patient_inputs, patient_profile)
