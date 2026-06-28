@@ -72,9 +72,18 @@ python src/train_diabetes_model.py
 
 The script will download `data/diabetes.csv` automatically if the file is missing, train all candidate models, print accuracy and classification reports, and save the best model.
 
-### 5. Review generated outputs
 
-After training, check these files:
+### 5. Run the patient-friendly web UI
+
+```bash
+streamlit run src/patient_app.py
+```
+
+The Streamlit app opens in your browser and lets you enter patient values in real time. It shows a diabetes risk prediction, an estimated probability score, and a comparison of the entered values against the dataset medians and percentiles.
+
+### 6. Review generated outputs
+
+After training or using the app, check these files:
 
 ```text
 models/diabetes_model.joblib
@@ -88,7 +97,8 @@ reports/confusion_matrix.png
 2. **Data preprocessing**: Replaces impossible zero medical measurements with missing values, imputes medians, and scales features for Logistic Regression.
 3. **Model training**: Trains Logistic Regression, Decision Tree, and Random Forest classifiers.
 4. **Model evaluation**: Calculates accuracy, confusion matrix, precision, recall, F1-score, and support.
-5. **Model saving**: Saves the best-performing pipeline as `models/diabetes_model.joblib`.
+5. **Patient-friendly UI**: Runs a Streamlit app that accepts live patient inputs and displays risk predictions plus dataset comparisons.
+6. **Model saving**: Saves the best-performing pipeline as `models/diabetes_model.joblib`.
 
 ## Report template
 
