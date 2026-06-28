@@ -1,0 +1,31 @@
+category,diet_preference,age_group,pregnancy,risk_level,activity_level,recommendation
+Breakfast ideas,Any,Any,Any,Any,Any,Vegetable oats or dalia with chia/flax seeds
+Breakfast ideas,Any,Any,Any,Any,Any,Unsweetened curd or Greek yogurt with nuts
+Lunch ideas,Any,Any,Any,Any,Any,2 multigrain rotis or a small brown-rice portion with dal
+Lunch ideas,Any,Any,Any,Any,Any,Large salad with cucumber, carrot, greens, and lemon dressing
+Lunch ideas,Any,Any,Any,Any,Any,One bowl of non-starchy vegetables such as beans, capsicum, cabbage, or cauliflower
+Dinner ideas,Any,Any,Any,Any,Any,Early light dinner with soup plus paneer tofu or legume protein
+Dinner ideas,Any,Any,Any,Any,Any,Avoid sugary drinks sweets refined flour snacks and oversized rice portions
+Smart snacks,Any,Any,Any,Any,Any,Roasted chana sprouts peanuts or a small handful of nuts
+Smart snacks,Any,Any,Any,Any,Any,Whole fruit such as apple guava orange or berries instead of fruit juice
+Breakfast ideas,Vegetarian,Any,Any,Any,Any,Besan chilla moong dal chilla tofu sprouts or paneer for vegetarian protein
+Lunch ideas,Vegetarian,Any,Any,Any,Any,Use dal chana rajma tofu paneer sprouts or curd as the protein source
+Breakfast ideas,Eggetarian,Any,Any,Any,Any,Boiled eggs or vegetable omelette with whole-grain toast
+Lunch ideas,Eggetarian,Any,Any,Any,Any,Dal beans paneer tofu or eggs for protein
+Breakfast ideas,Non-vegetarian,Any,Any,Any,Any,Boiled egg or omelette with vegetables
+Lunch ideas,Non-vegetarian,Any,Any,Any,Any,Grilled fish or skinless chicken with vegetables instead of fried meat
+Dinner ideas,Non-vegetarian,Any,Any,Any,Any,Clear chicken fish soup or grilled lean protein with sauteed vegetables
+Breakfast ideas,Any,Any,Yes,Any,Any,Pregnancy focus include calcium and protein such as milk curd paneer tofu dal or eggs if allowed
+Lunch ideas,Any,Any,Yes,Any,Any,Pregnancy focus do not skip meals use small frequent meals to reduce glucose spikes
+Smart snacks,Any,Any,Yes,Any,Any,Pregnancy focus keep a healthy snack ready such as nuts with fruit or curd with seeds
+Dinner ideas,Any,Any,Yes,Any,Any,Pregnancy focus ask your doctor about iron folate calcium vitamin D and safe weight gain
+Smart snacks,Any,senior adult,Any,Any,Any,Senior focus choose easy-to-digest protein and stay hydrated through the day
+Dinner ideas,Any,senior adult,Any,Any,Any,Senior focus keep dinner lighter and earlier if digestion or sleep is affected
+Smart snacks,Any,young adult,Any,Any,Any,Young adult focus replace packaged snacks and sweet drinks with protein-rich snacks
+Lunch ideas,Any,Any,Any,High,Any,High-risk focus use the plate method half vegetables one-quarter protein and one-quarter whole grain
+Dinner ideas,Any,Any,Any,High,Any,High-risk focus track fasting and post-meal glucose only under clinician guidance
+Breakfast ideas,Any,Any,Any,Medium,Any,Medium-risk focus add protein to breakfast to reduce mid-morning cravings
+Smart snacks,Any,Any,Any,Medium,Any,Medium-risk focus walk 10-15 minutes after major meals if your doctor says it is safe
+Smart snacks,Any,Any,Any,Low,Any,Low-risk focus maintain balanced meals and avoid frequent sugary treats
+Smart snacks,Any,Any,Any,Any,Low,Lifestyle focus start with gentle walking and avoid sitting continuously for long periods
+Lunch ideas,Any,Any,Any,Any,High,Activity focus include enough protein and complex carbohydrates around workouts
