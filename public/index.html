@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Diabetes Risk Predictor</title>
+  <style>
+    :root {
+      --teal: #0f766e;
+      --blue: #2563eb;
+      --green: #047857;
+      --amber: #d97706;
+      --red: #dc2626;
+      --ink: #0f172a;
+      --muted: #64748b;
+      --card: rgba(255, 255, 255, 0.92);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top left, rgba(37, 99, 235, 0.18), transparent 32rem),
+        linear-gradient(135deg, #f8fbff 0%, #eef7f5 100%);
+      min-height: 100vh;
+    }
+
+    .page { max-width: 1180px; margin: 0 auto; padding: 32px 18px 52px; }
+
+    .hero {
+      border-radius: 30px;
+      padding: 34px;
+      color: white;
+      background: linear-gradient(135deg, var(--teal), var(--blue));
+      box-shadow: 0 24px 60px rgba(37, 99, 235, 0.22);
+      margin-bottom: 24px;
+    }
+
+    .hero h1 { font-size: clamp(2rem, 5vw, 4rem); margin: 0 0 10px; }
+    .hero p { max-width: 780px; margin: 0; font-size: 1.08rem; opacity: 0.96; line-height: 1.7; }
+
+    .grid { display: grid; grid-template-columns: minmax(320px, 0.9fr) minmax(320px, 1.1fr); gap: 24px; align-items: start; }
+    @media (max-width: 880px) { .grid { grid-template-columns: 1fr; } }
+
+    .card {
+      background: var(--card);
+      border: 1px solid rgba(148, 163, 184, 0.24);
+      border-radius: 24px;
+      padding: 24px;
+      box-shadow: 0 18px 45px rgba(15, 118, 110, 0.08);
+      backdrop-filter: blur(16px);
+    }
+
+    .card h2 { margin-top: 0; }
+    .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+    @media (max-width: 560px) { .form-grid { grid-template-columns: 1fr; } }
+
+    label { display: block; font-weight: 700; margin-bottom: 6px; }
+    small { color: var(--muted); line-height: 1.4; }
+
+    input, select {
+      width: 100%;
+      border: 1px solid #cbd5e1;
+      border-radius: 14px;
+      padding: 12px 13px;
+      font-size: 0.98rem;
+      background: white;
+      outline-color: var(--teal);
+    }
+
+    .field { display: grid; gap: 4px; }
+
+    button {
+      width: 100%;
+      margin-top: 22px;
+      border: none;
+      border-radius: 16px;
+      padding: 15px 18px;
+      color: white;
+      font-weight: 800;
+      font-size: 1.02rem;
+      cursor: pointer;
+      background: linear-gradient(135deg, var(--teal), var(--blue));
+      box-shadow: 0 14px 32px rgba(37, 99, 235, 0.20);
+    }
+
+    button:disabled { opacity: 0.7; cursor: wait; }
+
+    .result-card { display: none; }
+    .risk-pill { display: inline-flex; align-items: center; border-radius: 999px; padding: 9px 14px; font-weight: 900; margin-bottom: 10px; }
+    .risk-low { color: var(--green); background: #dcfce7; }
+    .risk-medium { color: var(--amber); background: #fef3c7; }
+    .risk-high { color: var(--red); background: #fee2e2; }
+
+    .probability { font-size: 3rem; font-weight: 900; margin: 8px 0 0; }
+    .bar { height: 14px; border-radius: 999px; background: #e2e8f0; overflow: hidden; margin: 14px 0; }
+    .bar span { display: block; height: 100%; width: 0%; background: linear-gradient(90deg, var(--green), var(--amber), var(--red)); transition: width 0.4s ease; }
+
+    .diet-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 18px; }
+    @media (max-width: 640px) { .diet-grid { grid-template-columns: 1fr; } }
+    .diet-section { border-radius: 18px; background: #f8fafc; border: 1px solid #e2e8f0; padding: 16px; }
+    .diet-section h3 { margin-top: 0; color: var(--teal); }
+    .diet-section li { margin-bottom: 8px; line-height: 1.5; }
+
+    .note { border-radius: 18px; padding: 16px; background: #ecfeff; border: 1px solid #a5f3fc; line-height: 1.6; }
+    .info-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 18px; }
+    @media (max-width: 760px) { .info-grid { grid-template-columns: 1fr; } }
+    .info-tile { border-radius: 16px; padding: 14px; background: #f8fafc; border: 1px solid #e2e8f0; }
+    .info-tile strong { display: block; color: var(--teal); margin-bottom: 4px; }
+    .engine { margin-top: 10px; color: var(--muted); font-size: 0.95rem; }
+    .warning { border-radius: 18px; padding: 16px; background: #fff7ed; border: 1px solid #fed7aa; line-height: 1.6; margin-top: 18px; }
+    .error { color: var(--red); background: #fee2e2; border: 1px solid #fecaca; padding: 14px; border-radius: 16px; display: none; margin-top: 16px; }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="hero">
+      <h1>🩺 Diabetes Risk Predictor</h1>
+      <p>Enter patient health values to get a real-time diabetes chance estimate, low/medium/high risk tier, and an educational personalized diet plan based on age, pregnancy status, activity level, and food preference.</p>
+    </section>
+
+    <section class="grid">
+      <form class="card" id="predictionForm">
+        <h2>Patient inputs</h2>
+        <div class="form-grid">
+          <div class="field"><label>Pregnancies</label><input name="Pregnancies" type="number" min="0" max="17" step="1" value="1" required><small>Use 0 if not applicable.</small></div>
+          <div class="field"><label>Glucose</label><input name="Glucose" type="number" min="40" max="220" step="1" value="120" required><small>Plasma glucose concentration.</small></div>
+          <div class="field"><label>Blood Pressure</label><input name="BloodPressure" type="number" min="30" max="130" step="1" value="72" required><small>Diastolic blood pressure.</small></div>
+          <div class="field"><label>Skin Thickness</label><input name="SkinThickness" type="number" min="5" max="80" step="1" value="23" required><small>Triceps skin-fold thickness.</small></div>
+          <div class="field"><label>Insulin</label><input name="Insulin" type="number" min="10" max="850" step="1" value="80" required><small>2-hour serum insulin.</small></div>
+          <div class="field"><label>BMI</label><input name="BMI" type="number" min="12" max="70" step="0.1" value="28" required><small>Body Mass Index.</small></div>
+          <div class="field"><label>Diabetes Pedigree Function</label><input name="DiabetesPedigreeFunction" type="number" min="0.05" max="2.5" step="0.01" value="0.45" required><small>Family-history score.</small></div>
+          <div class="field"><label>Age</label><input name="Age" type="number" min="18" max="90" step="1" value="33" required><small>Patient age in years.</small></div>
+          <div class="field"><label>Food preference</label><select name="diet_preference"><option>Vegetarian</option><option>Non-vegetarian</option><option>Eggetarian</option></select><small>Vegetarian users receive vegetarian-only suggestions.</small></div>
+          <div class="field"><label>Currently pregnant?</label><select name="is_pregnant"><option value="false">No</option><option value="true">Yes</option></select><small>Adds pregnancy-focused reminders.</small></div>
+          <div class="field"><label>Activity level</label><select name="activity_level"><option>Low</option><option selected>Moderate</option><option>High</option></select><small>Used for lifestyle suggestions.</small></div>
+        </div>
+        <button id="submitButton" type="submit">Refresh prediction now</button>
+        <div class="error" id="errorBox"></div>
+      </form>
+
+      <section class="card">
+        <h2>Prediction result</h2>
+        <div class="note" id="emptyState">Change any value or dropdown to update the prediction automatically. You can also press refresh any time.</div>
+        <div class="info-grid">
+          <div class="info-tile"><strong>Low</strong><span>Keep healthy habits consistent.</span></div>
+          <div class="info-tile"><strong>Medium</strong><span>Improve food choices and monitor key numbers.</span></div>
+          <div class="info-tile"><strong>High</strong><span>Book a doctor checkup and review glucose results.</span></div>
+        </div>
+        <div class="result-card" id="resultCard">
+          <div id="riskPill" class="risk-pill"></div>
+          <p id="riskMessage"></p>
+          <div class="probability" id="probabilityText"></div>
+          <div class="bar"><span id="probabilityBar"></span></div>
+          <p id="profileSummary"></p>
+          <p id="modelStatus" class="engine"></p>
+          <h2>🥗 AI-guided personalized diet plan</h2>
+          <div class="diet-grid" id="dietGrid"></div>
+          <div class="warning" id="doctorNote"></div>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <script>
+    const form = document.getElementById("predictionForm");
+    const submitButton = document.getElementById("submitButton");
+    const errorBox = document.getElementById("errorBox");
+    const emptyState = document.getElementById("emptyState");
+    const resultCard = document.getElementById("resultCard");
+    const riskPill = document.getElementById("riskPill");
+    const riskMessage = document.getElementById("riskMessage");
+    const probabilityText = document.getElementById("probabilityText");
+    const probabilityBar = document.getElementById("probabilityBar");
+    const profileSummary = document.getElementById("profileSummary");
+    const modelStatus = document.getElementById("modelStatus");
+    const dietGrid = document.getElementById("dietGrid");
+    const doctorNote = document.getElementById("doctorNote");
+
+    function formPayload() {
+      const formData = new FormData(form);
+      const payload = {};
+      for (const [key, value] of formData.entries()) {
+        if (["diet_preference", "activity_level"].includes(key)) {
+          payload[key] = value;
+        } else if (key === "is_pregnant") {
+          payload[key] = value === "true";
+        } else {
+          payload[key] = Number(value);
+        }
+      }
+      return payload;
+    }
+
+    function renderDietPlan(plan) {
+      dietGrid.innerHTML = "";
+      Object.entries(plan).forEach(([section, items]) => {
+        const article = document.createElement("article");
+        article.className = "diet-section";
+        const list = items.map((item) => `<li>${item}</li>`).join("");
+        article.innerHTML = `<h3>${section}</h3><ul>${list}</ul>`;
+        dietGrid.appendChild(article);
+      });
+    }
+
+    let predictionTimer;
+
+    function schedulePrediction() {
+      clearTimeout(predictionTimer);
+      predictionTimer = setTimeout(runPrediction, 350);
+    }
+
+    async function runPrediction() {
+      submitButton.disabled = true;
+      submitButton.textContent = "Updating prediction...";
+      errorBox.style.display = "none";
+
+      try {
+        const payload = formPayload();
+        const response = await fetch("/api/predict", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "Prediction failed");
+
+        const percentage = data.probability * 100;
+        emptyState.style.display = "none";
+        resultCard.style.display = "block";
+        riskPill.className = `risk-pill risk-${data.risk_class}`;
+        riskPill.textContent = data.risk;
+        riskMessage.textContent = data.risk_message;
+        probabilityText.textContent = `${percentage.toFixed(1)}%`;
+        probabilityBar.style.width = `${Math.min(Math.max(percentage, 0), 100)}%`;
+        profileSummary.innerHTML = `Plan type: <strong>${payload.diet_preference}</strong> • Age group: <strong>${data.age_group}</strong> • Pregnancy: <strong>${payload.is_pregnant ? "Yes" : "No"}</strong>`;
+        modelStatus.textContent = `Prediction engine: ${data.model_status || "Machine-learning model"}`;
+        renderDietPlan(data.diet_plan);
+        doctorNote.textContent = data.doctor_note;
+      } catch (error) {
+        errorBox.textContent = error.message;
+        errorBox.style.display = "block";
+      } finally {
+        submitButton.disabled = false;
+        submitButton.textContent = "Refresh prediction now";
+      }
+    }
+
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      runPrediction();
+    });
+
+    form.querySelectorAll("input, select").forEach((control) => {
+      control.addEventListener("input", schedulePrediction);
+      control.addEventListener("change", schedulePrediction);
+    });
+
+    window.addEventListener("DOMContentLoaded", schedulePrediction);
+  </script>
+</body>
+</html>
