@@ -106,6 +106,11 @@
     .diet-section li { margin-bottom: 8px; line-height: 1.5; }
 
     .note { border-radius: 18px; padding: 16px; background: #ecfeff; border: 1px solid #a5f3fc; line-height: 1.6; }
+    .info-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 18px; }
+    @media (max-width: 760px) { .info-grid { grid-template-columns: 1fr; } }
+    .info-tile { border-radius: 16px; padding: 14px; background: #f8fafc; border: 1px solid #e2e8f0; }
+    .info-tile strong { display: block; color: var(--teal); margin-bottom: 4px; }
+    .engine { margin-top: 10px; color: var(--muted); font-size: 0.95rem; }
     .warning { border-radius: 18px; padding: 16px; background: #fff7ed; border: 1px solid #fed7aa; line-height: 1.6; margin-top: 18px; }
     .error { color: var(--red); background: #fee2e2; border: 1px solid #fecaca; padding: 14px; border-radius: 16px; display: none; margin-top: 16px; }
   </style>
@@ -140,12 +145,18 @@
       <section class="card">
         <h2>Prediction result</h2>
         <div class="note" id="emptyState">Fill the form and click the button to see the prediction, probability score, and personalized diet plan.</div>
+        <div class="info-grid">
+          <div class="info-tile"><strong>Low</strong><span>Keep healthy habits consistent.</span></div>
+          <div class="info-tile"><strong>Medium</strong><span>Improve food choices and monitor key numbers.</span></div>
+          <div class="info-tile"><strong>High</strong><span>Book a doctor checkup and review glucose results.</span></div>
+        </div>
         <div class="result-card" id="resultCard">
           <div id="riskPill" class="risk-pill"></div>
           <p id="riskMessage"></p>
           <div class="probability" id="probabilityText"></div>
           <div class="bar"><span id="probabilityBar"></span></div>
           <p id="profileSummary"></p>
+          <p id="modelStatus" class="engine"></p>
           <h2>🥗 AI-guided personalized diet plan</h2>
           <div class="diet-grid" id="dietGrid"></div>
           <div class="warning" id="doctorNote"></div>
@@ -165,6 +176,7 @@
     const probabilityText = document.getElementById("probabilityText");
     const probabilityBar = document.getElementById("probabilityBar");
     const profileSummary = document.getElementById("profileSummary");
+    const modelStatus = document.getElementById("modelStatus");
     const dietGrid = document.getElementById("dietGrid");
     const doctorNote = document.getElementById("doctorNote");
 
@@ -219,6 +231,7 @@
         probabilityText.textContent = `${percentage.toFixed(1)}%`;
         probabilityBar.style.width = `${Math.min(Math.max(percentage, 0), 100)}%`;
         profileSummary.innerHTML = `Plan type: <strong>${payload.diet_preference}</strong> • Age group: <strong>${data.age_group}</strong> • Pregnancy: <strong>${payload.is_pregnant ? "Yes" : "No"}</strong>`;
+        modelStatus.textContent = `Prediction engine: ${data.model_status || "Machine-learning model"}`;
         renderDietPlan(data.diet_plan);
         doctorNote.textContent = data.doctor_note;
       } catch (error) {
