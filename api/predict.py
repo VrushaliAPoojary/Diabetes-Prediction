@@ -20,6 +20,7 @@ ROOT = Path(__file__).resolve().parents[1]
 DATA_PATH = ROOT / "data" / "diabetes.csv"
 DIET_DATA_PATH = ROOT / "data" / "diet_recommendations.csv"
 MODEL_PATH = ROOT / "models" / "diabetes_model.joblib"
+INDEX_PATH = ROOT / "public" / "index.html"
 RANDOM_STATE = 42
 DATA_URL = "https://raw.githubusercontent.com/plotly/datasets/master/diabetes.csv"
 ZERO_AS_MISSING = ["Glucose", "BloodPressure", "SkinThickness", "Insulin", "BMI"]
@@ -143,10 +144,26 @@ class handler(BaseHTTPRequestHandler):
         self.send_response(status_code)
         self.send_header("Content-Type", "application/json")
         self.send_header("Access-Control-Allow-Origin", "*")
-        self.send_header("Access-Control-Allow-Methods", "POST, OPTIONS")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
         self.send_header("Access-Control-Allow-Headers", "Content-Type")
         self.end_headers()
         self.wfile.write(json.dumps(response).encode("utf-8"))
+
+    def _send_html(self, status_code: int, html: str) -> None:
+        self.send_response(status_code)
+        self.send_header("Content-Type", "text/html; charset=utf-8")
+        self.end_headers()
+        self.wfile.write(html.encode("utf-8"))
+
+    def do_GET(self) -> None:
+        if self.path in ("/", "/index.html"):
+            self._send_html(200, INDEX_PATH.read_text(encoding="utf-8"))
+            return
+        if self.path == "/favicon.ico":
+            self.send_response(204)
+            self.end_headers()
+            return
+        self._send_json(404, {"error": "Not found"})
 
     def do_OPTIONS(self) -> None:
         self._send_json(200, {"ok": True})
