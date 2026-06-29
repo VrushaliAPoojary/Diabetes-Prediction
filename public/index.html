@@ -138,13 +138,13 @@
           <div class="field"><label>Currently pregnant?</label><select name="is_pregnant"><option value="false">No</option><option value="true">Yes</option></select><small>Adds pregnancy-focused reminders.</small></div>
           <div class="field"><label>Activity level</label><select name="activity_level"><option>Low</option><option selected>Moderate</option><option>High</option></select><small>Used for lifestyle suggestions.</small></div>
         </div>
-        <button id="submitButton" type="submit">Predict diabetes chance</button>
+        <button id="submitButton" type="submit">Refresh prediction now</button>
         <div class="error" id="errorBox"></div>
       </form>
 
       <section class="card">
         <h2>Prediction result</h2>
-        <div class="note" id="emptyState">Fill the form and click the button to see the prediction, probability score, and personalized diet plan.</div>
+        <div class="note" id="emptyState">Change any value or dropdown to update the prediction automatically. You can also press refresh any time.</div>
         <div class="info-grid">
           <div class="info-tile"><strong>Low</strong><span>Keep healthy habits consistent.</span></div>
           <div class="info-tile"><strong>Medium</strong><span>Improve food choices and monitor key numbers.</span></div>
@@ -206,10 +206,16 @@
       });
     }
 
-    form.addEventListener("submit", async (event) => {
-      event.preventDefault();
+    let predictionTimer;
+
+    function schedulePrediction() {
+      clearTimeout(predictionTimer);
+      predictionTimer = setTimeout(runPrediction, 350);
+    }
+
+    async function runPrediction() {
       submitButton.disabled = true;
-      submitButton.textContent = "Calculating...";
+      submitButton.textContent = "Updating prediction...";
       errorBox.style.display = "none";
 
       try {
@@ -239,9 +245,21 @@
         errorBox.style.display = "block";
       } finally {
         submitButton.disabled = false;
-        submitButton.textContent = "Predict diabetes chance";
+        submitButton.textContent = "Refresh prediction now";
       }
+    }
+
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      runPrediction();
     });
+
+    form.querySelectorAll("input, select").forEach((control) => {
+      control.addEventListener("input", schedulePrediction);
+      control.addEventListener("change", schedulePrediction);
+    });
+
+    window.addEventListener("DOMContentLoaded", schedulePrediction);
   </script>
 </body>
 </html>
