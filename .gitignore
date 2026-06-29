@@ -1,0 +1,6 @@
+.venv/
+__pycache__/
+*.pyc
+models/*.joblib
+reports/*.png
+reports/*.txt
