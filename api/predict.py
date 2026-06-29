@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-from http.server import BaseHTTPRequestHandler
 from pathlib import Path
 from typing import Any
 from urllib.request import urlretrieve
@@ -144,44 +143,50 @@ def parse_payload(raw_body: bytes) -> dict[str, Any]:
     return payload
 
 
-class handler(BaseHTTPRequestHandler):
-    """Vercel Python Function handler."""
+def json_response(start_response: Any, status: str, response: dict[str, Any]) -> list[bytes]:
+    """Return a JSON WSGI response."""
+    body = json.dumps(response).encode("utf-8")
+    start_response(
+        status,
+        [
+            ("Content-Type", "application/json"),
+            ("Access-Control-Allow-Origin", "*"),
+            ("Access-Control-Allow-Methods", "GET, POST, OPTIONS"),
+            ("Access-Control-Allow-Headers", "Content-Type"),
+        ],
+    )
+    return [body]
 
-    def _send_json(self, status_code: int, response: dict[str, Any]) -> None:
-        self.send_response(status_code)
-        self.send_header("Content-Type", "application/json")
-        self.send_header("Access-Control-Allow-Origin", "*")
-        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type")
-        self.end_headers()
-        self.wfile.write(json.dumps(response).encode("utf-8"))
 
-    def _send_html(self, status_code: int, html: str) -> None:
-        self.send_response(status_code)
-        self.send_header("Content-Type", "text/html; charset=utf-8")
-        self.end_headers()
-        self.wfile.write(html.encode("utf-8"))
+def html_response(start_response: Any, status: str, html: str) -> list[bytes]:
+    """Return an HTML WSGI response."""
+    start_response(status, [("Content-Type", "text/html; charset=utf-8")])
+    return [html.encode("utf-8")]
 
-    def do_GET(self) -> None:
-        if self.path in ("/", "/index.html"):
+
+def app(environ: dict[str, Any], start_response: Any) -> list[bytes]:
+    """Vercel WSGI entrypoint for the UI and prediction API."""
+    method = environ.get("REQUEST_METHOD", "GET").upper()
+    path = environ.get("PATH_INFO", "/")
+
+    if method == "OPTIONS":
+        return json_response(start_response, "200 OK", {"ok": True})
+
+    if method == "GET":
+        if path in ("/", "/index.html"):
             html = INDEX_PATH.read_text(encoding="utf-8") if INDEX_PATH.exists() else EMBEDDED_INDEX_HTML
-            self._send_html(200, html)
-            return
-        if self.path == "/favicon.ico":
-            self.send_response(204)
-            self.end_headers()
-            return
-        self._send_json(404, {"error": "Not found"})
+            return html_response(start_response, "200 OK", html)
+        if path == "/favicon.ico":
+            start_response("204 No Content", [])
+            return [b""]
+        return json_response(start_response, "404 Not Found", {"error": "Not found"})
 
-    def do_OPTIONS(self) -> None:
-        self._send_json(200, {"ok": True})
-
-    def do_POST(self) -> None:
-        content_length = int(self.headers.get("Content-Length", 0))
-        raw_body = self.rfile.read(content_length)
-
+    if method == "POST":
         try:
+            content_length = int(environ.get("CONTENT_LENGTH") or 0)
+            raw_body = environ["wsgi.input"].read(content_length)
             payload = parse_payload(raw_body)
+
             import pandas as pd
 
             patient = {feature: payload[feature] for feature in FEATURES}
@@ -189,19 +194,24 @@ class handler(BaseHTTPRequestHandler):
             model = get_model()
             probability = float(model.predict_proba(patient_frame)[0][1])
             risk, risk_class, risk_message = risk_label(probability)
-            response = {
-                "probability": probability,
-                "risk": risk,
-                "risk_class": risk_class,
-                "risk_message": risk_message,
-                "age_group": age_group(payload["Age"]),
-                "diet_plan": get_diet_plan(payload, risk),
-                "doctor_note": (
-                    "This prediction and diet plan are educational only. Please consult a doctor, registered "
-                    "dietitian, or diabetes educator, especially during pregnancy, medication use, insulin use, "
-                    "kidney disease, heart disease, allergies, or any existing medical condition."
-                ),
-            }
-            self._send_json(200, response)
+            return json_response(
+                start_response,
+                "200 OK",
+                {
+                    "probability": probability,
+                    "risk": risk,
+                    "risk_class": risk_class,
+                    "risk_message": risk_message,
+                    "age_group": age_group(payload["Age"]),
+                    "diet_plan": get_diet_plan(payload, risk),
+                    "doctor_note": (
+                        "This prediction and diet plan are educational only. Please consult a doctor, registered "
+                        "dietitian, or diabetes educator, especially during pregnancy, medication use, insulin use, "
+                        "kidney disease, heart disease, allergies, or any existing medical condition."
+                    ),
+                },
+            )
         except Exception as error:
-            self._send_json(400, {"error": str(error)})
+            return json_response(start_response, "400 Bad Request", {"error": str(error)})
+
+    return json_response(start_response, "405 Method Not Allowed", {"error": f"Unsupported method: {method}"})

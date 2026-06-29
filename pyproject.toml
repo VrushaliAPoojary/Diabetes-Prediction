@@ -11,4 +11,4 @@ dependencies = [
 ]
 
 [tool.vercel]
-entrypoint = "api.predict:handler"
+entrypoint = "api.predict:app"

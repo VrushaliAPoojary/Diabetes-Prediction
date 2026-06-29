@@ -105,7 +105,7 @@ Then open the local URL printed by Vercel, usually `http://localhost:3000`. The 
 4. Use the default settings or choose **Other** as the framework preset.
 5. Deploy.
 
-Vercel will serve `public/index.html` as the patient-friendly UI through the Python handler for `GET /`, and `api/predict.py` also handles the prediction endpoint for `POST /api/predict`. `pyproject.toml` points Vercel to the Python function entrypoint `api.predict:handler` and intentionally lists only the smaller API dependencies to stay under Vercel function bundle limits. The original Streamlit app remains available for local use with `streamlit run src/patient_app.py` using `requirements.txt`.
+Vercel will serve `public/index.html` as the patient-friendly UI through the Python handler for `GET /`, and `api/predict.py` also handles the prediction endpoint for `POST /api/predict`. `pyproject.toml` points Vercel to the Python function entrypoint `api.predict:app` and intentionally lists only the smaller API dependencies to stay under Vercel function bundle limits. The original Streamlit app remains available for local use with `streamlit run src/patient_app.py` using `requirements.txt`.
 
 ### 8. Review generated outputs
 
