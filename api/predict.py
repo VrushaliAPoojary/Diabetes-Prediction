@@ -3,25 +3,26 @@
 from __future__ import annotations
 
 import json
-import sys
 from http.server import BaseHTTPRequestHandler
 from pathlib import Path
 from typing import Any
+from urllib.request import urlretrieve
 
 import joblib
+import numpy as np
 import pandas as pd
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.impute import SimpleImputer
+from sklearn.pipeline import Pipeline
 
 ROOT = Path(__file__).resolve().parents[1]
-SRC = ROOT / "src"
-if str(SRC) not in sys.path:
-    sys.path.insert(0, str(SRC))
-
-from train_diabetes_model import build_models, load_data, preprocess_features  # noqa: E402
 
 DATA_PATH = ROOT / "data" / "diabetes.csv"
 DIET_DATA_PATH = ROOT / "data" / "diet_recommendations.csv"
 MODEL_PATH = ROOT / "models" / "diabetes_model.joblib"
 RANDOM_STATE = 42
+DATA_URL = "https://raw.githubusercontent.com/plotly/datasets/master/diabetes.csv"
+ZERO_AS_MISSING = ["Glucose", "BloodPressure", "SkinThickness", "Insulin", "BMI"]
 LOW_RISK_LIMIT = 0.35
 MEDIUM_RISK_LIMIT = 0.65
 FEATURES = [
@@ -36,14 +37,44 @@ FEATURES = [
 ]
 
 
+def download_dataset(path: Path) -> None:
+    """Download the diabetes dataset for Vercel fallback training when needed."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    urlretrieve(DATA_URL, path)
+
+
+def load_dataset(path: Path) -> pd.DataFrame:
+    """Load the diabetes dataset without importing plotting or Streamlit-only dependencies."""
+    if not path.exists():
+        download_dataset(path)
+    return pd.read_csv(path)
+
+
+def preprocess_features(data: pd.DataFrame) -> tuple[pd.DataFrame, pd.Series]:
+    """Prepare features for the lightweight Vercel fallback model."""
+    clean = data.copy()
+    clean[ZERO_AS_MISSING] = clean[ZERO_AS_MISSING].replace(0, np.nan)
+    return clean.drop(columns="Outcome"), clean["Outcome"]
+
+
+def build_vercel_model() -> Pipeline:
+    """Build the lightweight Random Forest pipeline used by the Vercel function."""
+    return Pipeline(
+        steps=[
+            ("imputer", SimpleImputer(strategy="median")),
+            ("model", RandomForestClassifier(n_estimators=200, max_depth=6, random_state=RANDOM_STATE)),
+        ]
+    )
+
+
 def get_model() -> Any:
     """Load the trained model or train a Random Forest fallback when the model file is absent."""
     if MODEL_PATH.exists():
         return joblib.load(MODEL_PATH)
 
-    data = load_data(DATA_PATH)
+    data = load_dataset(DATA_PATH)
     x, y = preprocess_features(data)
-    model = build_models(RANDOM_STATE)["Random Forest"]
+    model = build_vercel_model()
     model.fit(x, y)
     return model
 
