@@ -8,11 +8,14 @@ This project trains supervised machine-learning models to predict whether a pati
 
 ```text
 Diabetes-Prediction/
+├── api/predict.py                # Vercel-compatible prediction API
+├── public/index.html             # Vercel-compatible patient web UI
 ├── data/                         # Dataset location plus diet recommendation knowledge base
 ├── models/                       # Saved trained model output
 ├── reports/                      # Text report and confusion-matrix image output
 ├── src/train_diabetes_model.py   # Main training and evaluation script
 ├── requirements.txt              # Python dependencies
+├── vercel.json                   # Vercel routing configuration
 └── README.md                     # Instructions and report
 ```
 
@@ -81,7 +84,29 @@ streamlit run src/patient_app.py
 
 The Streamlit app opens in your browser and lets you enter patient values in real time. It shows low, medium, or high diabetes chance, an estimated probability score, dataset comparisons, and an AI-guided diet plan based on pregnancy status, age group, activity level, and vegetarian/non-vegetarian preference.
 
-### 6. Review generated outputs
+
+### 6. Run the Vercel-compatible UI locally
+
+The project keeps the Streamlit app and also includes a Vercel-ready browser UI plus Python API. To test the Vercel version locally, install the Vercel CLI and run:
+
+```bash
+npm install -g vercel
+vercel dev
+```
+
+Then open the local URL printed by Vercel, usually `http://localhost:3000`. The browser UI calls `/api/predict`, which returns the diabetes chance, low/medium/high risk tier, personalized diet plan, and doctor-consultation note.
+
+### 7. Deploy to Vercel
+
+1. Push this repository to GitHub.
+2. Open Vercel and choose **Add New Project**.
+3. Import this repository.
+4. Use the default settings or choose **Other** as the framework preset.
+5. Deploy.
+
+Vercel will serve `public/index.html` as the patient-friendly UI and `api/predict.py` as the Python prediction endpoint. The original Streamlit app remains available for local use with `streamlit run src/patient_app.py`.
+
+### 8. Review generated outputs
 
 After training or using the app, check these files:
 
@@ -98,8 +123,9 @@ reports/confusion_matrix.png
 3. **Model training**: Trains Logistic Regression, Decision Tree, and Random Forest classifiers.
 4. **Model evaluation**: Calculates accuracy, confusion matrix, precision, recall, F1-score, and support.
 5. **Patient-friendly UI**: Runs a Streamlit app that accepts live patient inputs and displays low, medium, or high risk predictions plus dataset comparisons.
-6. **Diet recommendation feature**: Uses `data/diet_recommendations.csv` as a local knowledge base to suggest vegetarian, non-vegetarian, eggetarian, pregnancy-aware, age-aware, and risk-aware meal ideas.
-7. **Model saving**: Saves the best-performing pipeline as `models/diabetes_model.joblib`.
+6. **Vercel-compatible UI**: Provides `public/index.html` and `api/predict.py` so the same prediction and diet features can run as a static browser UI backed by a Python API endpoint.
+7. **Diet recommendation feature**: Uses `data/diet_recommendations.csv` as a local knowledge base to suggest vegetarian, non-vegetarian, eggetarian, pregnancy-aware, age-aware, and risk-aware meal ideas.
+8. **Model saving**: Saves the best-performing pipeline as `models/diabetes_model.joblib`.
 
 ## AI-guided diet recommendation feature
 
