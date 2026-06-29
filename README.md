@@ -15,6 +15,7 @@ Diabetes-Prediction/
 ├── reports/                      # Text report and confusion-matrix image output
 ├── src/train_diabetes_model.py   # Main training and evaluation script
 ├── requirements.txt              # Python dependencies
+├── pyproject.toml                # Vercel Python entrypoint configuration
 ├── vercel.json                   # Vercel routing configuration
 └── README.md                     # Instructions and report
 ```
@@ -104,7 +105,7 @@ Then open the local URL printed by Vercel, usually `http://localhost:3000`. The 
 4. Use the default settings or choose **Other** as the framework preset.
 5. Deploy.
 
-Vercel will serve `public/index.html` as the patient-friendly UI and `api/predict.py` as the Python prediction endpoint. The original Streamlit app remains available for local use with `streamlit run src/patient_app.py`.
+Vercel will serve `public/index.html` as the patient-friendly UI and `api/predict.py` as the Python prediction endpoint. `pyproject.toml` points Vercel to the Python function entrypoint `api.predict:handler`. The original Streamlit app remains available for local use with `streamlit run src/patient_app.py`.
 
 ### 8. Review generated outputs
 
